@@ -1,0 +1,5 @@
+train: /content/drive/My Drive/Tensorflow/YoloV5/yolov5/dataset/train/images
+val: /content/drive/My Drive/Tensorflow/YoloV5/yolov5/dataset/valid/images
+
+nc: 1
+names: ['smoke']
