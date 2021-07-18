@@ -1,0 +1,102 @@
+[net] ★ The line starting with [xxx] represents a layer of the network, the content of which is the parameter configuration of the layer, [net] is a special layer, and the entire network is configured.
+ # Testing ★ The behavior comment line at the beginning of the #  will ignore the line when parsing the cfg file.
+# batch=1
+# subdivisions=1
+# Training
+ Batch=64 ★ The batch here is a little different from the batch in machine learning. It only indicates how many samples the network has accumulated and then BP. 
+ Subdivisions=16 ★ This parameter indicates that the batch image of a batch is sub-sub-networked to complete the forward propagation of the network.
+                                                           ★★ Knock on the blackboard: In Darknet, batch and sub are used together, for example, batch=64, sub=16 means training.
+                                                           In the process, 64 images will be loaded into the memory at one time, and then forward propagation will be completed 16 times, meaning that each time 4, the process of forward propagation
+                                                           Accumulate loss to average, after 64 pictures have been forward-propagated, and then update the parameters one time later.
+                                                           ★★★ Assistant experience: Sub is generally set to 16, not too big or too small, and is a multiple of 8, in fact, there is no hard and fast rule, just look comfortable
+                                                           The value of batch can be dynamically adjusted according to the memory usage. The sub-size can be added and subtracted at one time. Generally, the larger the batch, the better.
+                                                           Note that both batch and sub are set to 1 during testing to avoid mysterious errors!
+
+ Width=608 ★ Wide width of network input
+ Height=608 ★ High height of network input
+ Channels=3 ★ Number of channels input by the network channels
+                                                           ★★★ width and height must be multiples of 32, otherwise the network cannot be loaded
+                             ★ Tip: width can also be set to not equal to height, usually, the greater the value of width and height, the recognition of small targets
+                                                           The better the effect, but limited by the memory, the reader can try different combinations
+                             
+ Momentum=0.9 ★ Momentum Momentum parameter in the optimization method of DeepLearning1, this value affects the gradient to the optimal worth speed
+ Decay=0.0005 ★ Weight attenuating the regular term to prevent overfitting
+
+ Angle=0 ★ Data enhancement parameters, generate more training samples by rotating the angle
+ Saturation = 1.5 ★ Data enhancement parameters, by adjusting the saturation to generate more training samples
+ Exposure = 1.5 ★ Data enhancement parameters, by adjusting the exposure to generate more training samples
+ Hue=.1 ★ Data enhancement parameters, generate more training samples by adjusting the hue
+
+ Learning_rate=0.001 ★ The learning rate determines the speed at which the weights are updated. Setting too large will make the result exceed the optimal value. Too small will make the falling speed too slow.
+                                                           If the parameters are adjusted only by human intervention, the learning rate needs to be constantly revised. You can set the learning rate higher when you start training.
+                                                           After a certain number of rounds, it is reduced in the training process, and the dynamically changing learning rate is generally set according to the number of training rounds.
+                                                           At the beginning of training: the learning rate is preferably 0.01 ~ 0.001. After a certain number of rounds: gradually slow down.
+                                                           Near the end of training: the attenuation of the learning rate should be more than 100 times.
+                                                           The learning rate adjustment reference https://blog.csdn.net/qq_33485434/article/details/80452941
+                             ★★★ The learning rate adjustment must not be too dead. In the actual training process, according to the change of loss and other indicators, the manual ctrl+c knot
+                                                           After the training, modify the learning rate, and then load the model just saved to continue the training to complete the manual adjustment. The basis for the adjustment is based on the training.
+                                                           Log, if the loss fluctuation is too large, indicating that the learning rate is too large, appropriate reduction, become 1/5, 1/10 can be, if the loss is almost unchanged,
+                                                           It is possible that the network has converged or has fallen into a local minimum. At this time, the learning rate can be appropriately increased. Be sure to train for a long time after adjusting the learning rate.
+                                                           One point, full observation, adjustment is a delicate, slowly pondering
+                                                           ★★ A little note: The actual learning rate is related to the number of GPUs. For example, if your learning rate is set to 0.001, if you have 4 GPUs, then
+                                                           Real learning rate is 0.001/4
+ Burn_in=1000 ★ When the number of iterations is less than burn_in, there is a way to update the learning rate. When the number of iterations is greater than burn_in, the update mode of the policy is adopted.
+ Max_batches = 500200 ★ Stop learning after the number of training reaches max_batches, once for a batch
+
+ Policy=steps ★ Learning rate adjustment strategy: constant, steps, exp, poly, step, sig, RANDOM, constant, etc.
+                                                           Reference https://nanfei.ink/2018/01/23/YOLOv2%E8%B0%83%E5%8F%82%E6%80%BB%E7%BB%93/#more
+steps=400000,450000          
+ Scales=.1,.1 ★ steps and scale are set to change the learning rate, such as when the iteration reaches 400,000 times, the learning rate is attenuated ten times, and 45,000 iterations are learned.
+                             The rate will be attenuated ten times on the basis of the previous learning rate.
+
+ [convolutional] ★ Configuration instructions for a layer of convolution
+ Batch_normalize=1 ★ Whether to perform BN processing, what is BN is not described here, 1 is yes, 0 is not 
+ Filters=32 ★ The number of convolution kernels, also the number of output channels
+ Size=3 ★ Convolution core size
+ Stride=1 ★ Convolution step
+ Pad=1 ★ Whether to perform 0 padding during convolution, the number of padding is related to the size of the convolution kernel, rounded down for size/2, such as 3/2=1
+ Activation=leaky ★ Network layer activation function
+                                                           ★★ Convolution kernel size 3*3 with padding and step size is 1, does not change the size of the feature map
+                             
+# Downsample
+ [convolutional] ★ Configuration instructions for the downsampling layer
+batch_normalize=1
+filters=64
+size=3
+stride=2
+pad=1
+ Activation=leaky ★★ The convolution kernel size is 3*3, with padding and the step size is 2, the feature map becomes half the original size.
+
+ [shortcut] ★ shotcut layer configuration instructions
+ From=-3 ★ How many times before the fusion, -3 indicates the third layer
+ Activation=linear ★ hierarchy activation function
+    ......
+    ......
+ [convolutional] ★ YOLO layer in front of a layer of convolution layer configuration instructions
+size=1
+stride=1
+pad=1
+ Filters=255 ★ filters=num(the number of predicted frames)*(classes+5), the meaning of 5 is 4 coordinates plus a confidence rate, tx, ty, tw, th in the paper,
+                                                           c, classes is the number of categories, COCO is 80, num represents the number of frames predicted by each cell in YOLO, and 3 in YOLOV3
+                             ★★★ When you use it yourself, the value here must be changed according to your own data set. For example, if you identify 4 classes, then:
+                                                           Filters=3*(4+5)=27, all three fileters need to be modified, remember
+activation=linear
+
+ [yolo] ★ YOLO layer configuration instructions
+ Mask = 0,1,2 ★ Using the index of the anchor, 0, 1, 2 means using the first three anchors in the anchors defined below
+anchors = 10,13,  16,30,  33,23,  30,61,  62,45,  59,119,  116,90,  156,198,  373,326   
+ Classes=80 ★ Number of categories
+ Num=9 ★ Each grid cell predicts a total of several boxes, which is consistent with the number of anchors. Need to turn up num when you want to use more anchors
+ Jitter=.3 ★ Data enhancement means, here jitter is a random adjustment of the aspect ratio range, this parameter is not easy to understand, detailed in my source code comments
+ignore_thresh = .7
+ Truth_thresh = 1 ★ The size of the IOU threshold involved in the calculation. When the predicted detection box and the ground true IOU are greater than ignore_thresh, participate
+                                                           The calculation of loss, otherwise, the detection box does not participate in the loss calculation.
+                                                           ★ Understanding: The purpose is to control the scale of the detection frame participating in the loss calculation. When the ignore_thresh is too large, close to 1, then participate.
+                                                           The number of regressions in the detection box will be less, and it will easily cause over-fitting; if ignore_thresh is set too small, then
+                                                           The number of participants involved in the calculation will be large. At the same time, it is easy to cause under-fitting when performing the detection frame regression.
+                                                           ★ Parameter setting: Generally choose a value between 0.5 and 0.7. The previous calculation basis is small scale (13*13) with 0.7.
+                             (26*26) is 0.5. This time, first change 0.5 to 0.7. Reference: https://www.e-learn.cn/content/qita/804953
+ Random=1 ★ Turn on random multi-scale training for 1 and close for 0
+                                                           ★★ Tip: When opening random multi-scale training, the previously set network input size width and height will not work, width
+                                                           Will randomly take values ​​between 320 and 608, and width=height, no change in 10 rounds. Generally, you can modify it according to your needs.
+                                                           The range of random scale training, this can increase the batch, hope the reader to try!

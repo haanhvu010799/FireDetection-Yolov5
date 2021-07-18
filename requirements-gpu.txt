@@ -1,0 +1,11 @@
+tensorflow-gpu==2.3.0rc0
+opencv-python==4.1.1.26
+lxml
+tqdm
+absl-py
+matplotlib
+easydict
+pillow
+numpy>=1.15.1
+onnx==1.4.1
+pycuda>=2017.1.1

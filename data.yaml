@@ -1,5 +1,0 @@
-
-train: train.txt
-val: val.txt
-nc: 1
-names: ['Fire']
